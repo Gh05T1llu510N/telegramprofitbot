@@ -10,6 +10,7 @@ import re
 import psycopg2
 from datetime import datetime, date
 from telegram import Update
+from telegram.error import BadRequest
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
 # ═══════════════════════════════════════
@@ -231,6 +232,19 @@ def db_reset_group(chat_id):
     conn.close()
 
 # ═══════════════════════════════════════
+# HELPERS
+# ═══════════════════════════════════════
+
+async def safe_send(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str):
+    """Send message safely - fallback to send_message if reply_text fails"""
+    try:
+        await update.message.reply_text(text)
+    except BadRequest:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+    except Exception:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+# ═══════════════════════════════════════
 # MESSAGE HANDLERS
 # ═══════════════════════════════════════
 
@@ -311,7 +325,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 ⟡ ─────────────────── ⟡"""
 
-    await update.message.reply_text(response)
+    await safe_send(update, context, response)
 
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle .start atau .help"""
@@ -340,7 +354,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
    ┊ .reset     ➜  Reset semua data
 
 ⟡ ─────────────────── ⟡"""
-    await update.message.reply_text(response)
+    await safe_send(update, context, response)
 
 async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle .status"""
@@ -386,7 +400,7 @@ async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
    ꒰ 📝 ꒱  Transaksi hari ini: {tx_count}
 
 ⟡ ─────────────────── ⟡"""
-    await update.message.reply_text(response)
+    await safe_send(update, context, response)
 
 async def daily_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle .daily"""
@@ -402,7 +416,7 @@ async def daily_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
    ┊ ➜  {formatted}
 
 ⟡ ─────────────────── ⟡"""
-    await update.message.reply_text(response)
+    await safe_send(update, context, response)
 
 async def weekly_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle .weekly"""
@@ -422,7 +436,7 @@ async def weekly_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
    ┊ ➜  {formatted}
 
 ⟡ ─────────────────── ⟡"""
-    await update.message.reply_text(response)
+    await safe_send(update, context, response)
 
 async def monthly_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle .monthly"""
@@ -441,7 +455,7 @@ async def monthly_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
    ┊ ➜  {formatted}
 
 ⟡ ─────────────────── ⟡"""
-    await update.message.reply_text(response)
+    await safe_send(update, context, response)
 
 async def history_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle .history"""
@@ -458,7 +472,7 @@ async def history_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
    Belum ada transaksi hari ini.
 
 ⟡ ─────────────────── ⟡"""
-        await update.message.reply_text(response)
+        await safe_send(update, context, response)
         return
     
     daily_total = db_get_daily_total(chat_id)
@@ -484,7 +498,7 @@ async def history_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
    ꒰ 💵 ꒱  Total: {formatted_daily}
 ⟡ ─────────────────── ⟡"""
     
-    await update.message.reply_text(header + entries + footer)
+    await safe_send(update, context, header + entries + footer)
 
 async def reset_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle .reset"""
@@ -499,7 +513,7 @@ async def reset_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
    telah direset ke Rp. 0
 
 ⟡ ─────────────────── ⟡"""
-    await update.message.reply_text(response)
+    await safe_send(update, context, response)
 
 # ═══════════════════════════════════════
 # MAIN
